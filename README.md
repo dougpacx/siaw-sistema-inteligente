@@ -118,8 +118,10 @@ projeto-pi/
 
 ## 👥 Equipe do Projeto
 
-Davi Soares
+Davi Soares 
+
 Douglas Pacheco
+
 Pierry Savio
 
 ---
