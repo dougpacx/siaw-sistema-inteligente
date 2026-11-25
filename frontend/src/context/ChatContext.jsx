@@ -14,10 +14,23 @@ export const ChatProvider = ({ children }) => {
   const [isAiTyping, setIsAiTyping] = useState(false);
   const [kbItems, setKbItems] = useState([]);
 
-  // Load KB items for local RAG
+  // Load KB items and conversations from backend on startup
   useEffect(() => {
     knowledgeBaseService.getAll().then(items => {
-      setKbItems(items);
+      if (items && items.length > 0) setKbItems(items);
+    }).catch(console.error);
+
+    chatService.getConversations().then(data => {
+      if (data && data.length > 0) {
+        setConversations(prev => {
+          const sim = prev.find(c => c.id === 'conv-simulador');
+          const hasSim = data.some(c => c.id === 'conv-simulador');
+          if (sim && !hasSim) {
+            return [sim, ...data];
+          }
+          return data;
+        });
+      }
     }).catch(console.error);
   }, []);
 
@@ -68,7 +81,12 @@ export const ChatProvider = ({ children }) => {
     // Trigger AI response with RAG
     setIsAiTyping(true);
     try {
-      const aiResult = await chatService.simulateAiResponse(text, kbItems);
+      const aiResult = await chatService.simulateAiResponse(
+        text, 
+        kbItems, 
+        simulatorConversation?.phone || '+55 11 98765-4321', 
+        simulatorConversation?.customerName || 'Você (Simulador WhatsApp)'
+      );
       
       const nowAi = new Date();
       const timeAiStr = `${String(nowAi.getHours()).padStart(2, '0')}:${String(nowAi.getMinutes()).padStart(2, '0')}`;
@@ -127,6 +145,9 @@ export const ChatProvider = ({ children }) => {
       }
       return conv;
     }));
+
+    // Notify backend
+    chatService.sendOperatorMessage(convId, text, operatorName).catch(console.error);
   };
 
   // Operator Actions on Conversation
@@ -142,6 +163,8 @@ export const ChatProvider = ({ children }) => {
       }
       return conv;
     }));
+
+    chatService.updateStatus(convId, 'Em Atendimento', operatorName).catch(console.error);
   };
 
   const returnToAi = (convId) => {
@@ -165,6 +188,8 @@ export const ChatProvider = ({ children }) => {
       }
       return conv;
     }));
+
+    chatService.updateStatus(convId, 'Com a IA', null).catch(console.error);
   };
 
   const finalizeConversation = (convId) => {
@@ -188,6 +213,8 @@ export const ChatProvider = ({ children }) => {
       }
       return conv;
     }));
+
+    chatService.updateStatus(convId, 'Finalizado', null).catch(console.error);
   };
 
   const requestHumanTransbordoInSimulator = () => {

@@ -1,13 +1,13 @@
-package br.gov.sp.fatec.chatbot_whatsapp;
+package com.siaw.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ChatbotWhatsappApplicationTests {
+class SiawBackendApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+    @Test
+    void contextLoads() {
+    }
 
 }

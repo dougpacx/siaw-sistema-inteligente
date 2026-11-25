@@ -136,7 +136,7 @@ export const INITIAL_CONVERSATIONS = [
 async function fetchWithFallback(endpoint, options = {}, fallbackData = null) {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1800); // 1.8s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout for smooth AI inference
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       signal: controller.signal,
@@ -356,10 +356,15 @@ export const chatService = {
   },
 
   // AI response engine with RAG over knowledge base
-  async simulateAiResponse(userMessage, kbItems = []) {
+  async simulateAiResponse(userMessage, kbItems = [], customerPhone = '+55 11 98765-4321', customerName = 'Você (Simulador WhatsApp)') {
     return fetchWithFallback('/chat', {
       method: 'POST',
-      body: JSON.stringify({ message: userMessage })
+      body: JSON.stringify({ 
+        message: userMessage, 
+        text: userMessage,
+        customerPhone, 
+        customerName 
+      })
     }, async () => {
       // Simulate network / generative thinking delay
       await new Promise(res => setTimeout(res, 900));
@@ -441,5 +446,21 @@ export const chatService = {
         matchedKb: null
       };
     });
+  },
+
+  async sendOperatorMessage(convId, text, operatorName = 'Operador') {
+    const numericId = String(convId).replace(/\D/g, '') || '1';
+    return fetchWithFallback(`/conversations/${numericId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ text, operatorName })
+    }, () => ({ text, operatorName }));
+  },
+
+  async updateStatus(convId, status, operatorName = 'Administrador SIAW') {
+    const numericId = String(convId).replace(/\D/g, '') || '1';
+    return fetchWithFallback(`/conversations/${numericId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, operatorName })
+    }, () => ({ status, operatorName }));
   }
 };
